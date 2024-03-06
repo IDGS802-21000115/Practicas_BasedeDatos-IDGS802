@@ -1,5 +1,5 @@
 from wtforms import Form
-from wtforms import StringField, TextAreaField, SelectField, RadioField, IntegerField
+from wtforms import StringField, TextAreaField, SelectField, RadioField, IntegerField,BooleanField,SelectMultipleField
 from wtforms import EmailField
 from wtforms import validators
 
@@ -27,3 +27,17 @@ class UserForm3(Form):
     email=EmailField('email')
     genero=StringField('genero')
     materia=StringField('materia')
+
+
+class UserForm4(Form):
+    id =IntegerField("id")
+    nombre = StringField("nombre",[validators.DataRequired(message='el campo es requerido'), validators.Length(min=4,max=10,message='ingresa nombre valido')])
+    telefono = StringField("telefono")
+    total =IntegerField("total")
+    direccion=StringField('direccion')
+    tamaño = RadioField('tamaño',choices=[("chica", "chica"),("mediana", "mediana"),("grande", "grande")])
+    jamon = BooleanField("Jamon")
+    piña = BooleanField("Piña")
+    champiñones = BooleanField("Champiñon")
+    
+    numero =IntegerField("numero")

@@ -5,9 +5,10 @@ from flask_wtf.csrf import CSRFProtect
 from flask import g
 from flask import flash
 from config import DevelopmentConfig
-from models import db
+from models import Pizzas, db
 from models import Alumnos
 from models import Maestros
+from pizzas import Guardar
 
 app = Flask(__name__)
 app.config.from_object(DevelopmentConfig)
@@ -80,6 +81,48 @@ def alumnos():
         print("apaterno: {}".format(apaterno))
     return render_template("alumnos.html", form=alum_form, nom=nom, apaterno=apaterno,correo=correo)
 
+@app.route("/pizzas", methods=["GET", "POST"])
+def pizzas():
+    pizzas_form =forms.UserForm4(request.form)
+    datos_archivo = Guardar.leer_datos_archivo()  
+    pizzass_bd = Pizzas.query.all() 
+    try:
+        if request.method == "POST" and pizzas_form.validate():
+            tamaño = str(pizzas_form.tamaño.data)
+            jamon = str(pizzas_form.jamon.data)
+            piña = str(pizzas_form.piña.data)
+            champinones = str(pizzas_form.champiñones.data)
+            numero = pizzas_form.numero.data
+            
+            print (pizzas_form.jamon.data)
+            print (pizzas_form.piña.data)
+            if request.form.get("accion") == "insertar_bd":
+                pizzas = Pizzas(
+                    nombre=pizzas_form.nombre.data,
+                    direccion=pizzas_form.direccion.data,
+                    telefono=pizzas_form.telefono.data,
+                    total=Guardar.sumar_subtotales()
+                )
+            
+                db.session.add(pizzas)
+                db.session.commit()
+                
+                flash("¡Muy bien insertado en la base de datos!")
+                pizzass_bd = Pizzas.query.all() 
+            elif request.form.get("accion") == "insertar_archivo":
+                r = Guardar()
+                result, nuevo_dato = r.unapizza(tamaño, {"jamon": jamon, "piña": piña, "champinones": champinones}, numero)
+
+                if nuevo_dato:
+                    flash("¡Muy bien insertado en el archivo de texto!")
+                    datos_archivo.append(nuevo_dato) 
+                else:
+                    flash(f"Error al insertar en el archivo de texto: {result}")
+
+    except Exception as e:
+        flash(f"Error general: {e}")
+
+    return render_template("pizzas.html", form=pizzas_form, datos_archivo=datos_archivo, pizzass_bd=pizzass_bd)
 
 if __name__ == "__main__":
     csrf.init_app(app)
