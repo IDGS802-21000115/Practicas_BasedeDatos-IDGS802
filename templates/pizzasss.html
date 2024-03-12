@@ -1,0 +1,173 @@
+{% extends 'layout2.html' %}
+{% from "_macros.html" import input_Form %}
+{% block content %}
+<div class="container">
+    <center> <h1>Pizza Daiana</h1></center>
+    <div class="row">
+        <form name="registro" id="registro" method="POST" onsubmit="return submitForm()">
+            <div class="row">
+                <div class="form-group col-md-4">
+                    {{ input_Form(form.nombre, class="form-control", placeholder="Nombre") }}
+                </div>
+                <div class="form-group col-md-4">
+                    {{ input_Form(form.direccion, class="form-control", placeholder="Dirección") }}
+                </div>
+                <div class="form-group col-md-4">
+                    {{ input_Form(form.telefono, class="form-control", placeholder="Teléfono") }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-md-4">
+                    {{ input_Form(form.tamaño, class="form-control", placeholder="Tamaño") }}
+                </div>
+            </div>
+            <label>Ingredientes</label>
+            <div class="row">
+                <div class="form-check col-md-4">
+                    {{ form.jamon(class="form-check-input") }}
+                    <label class="form-check-label" for="{{ form.jamon.id }}">Jamon</label>
+                </div>
+                <div class="form-check col-md-4">
+                    {{ form.piña(class="form-check-input") }}
+                    <label class="form-check-label" for="{{ form.piña.id }}">Piña</label>
+                </div>
+                <div class="form-check col-md-4">
+                    {{ form.champiñones(class="form-check-input") }}
+                    <label class="form-check-label" for="{{ form.champiñones.id }}">Champiñones</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-md-4">
+                    {{ input_Form(form.numero, class="form-control", placeholder="Número") }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-md-4">
+                    {{ input_Form(form.fecha, class="form-control", placeholder="Fecha") }}
+                </div>
+            </div>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="accion" id="accion" value="insertar_bd" />
+            <div class="row">
+                <div class="form-group col-md-12">
+                    
+                    <button type="button" onclick="openModal()" class="btn btn-info">Realizar compra</button>
+                    <button type="button" onclick="cambiarAccion('insertar_archivo')" class="btn btn-warning">Insertar en archivo</button>
+                   
+                    <div class="row">
+                        <div class="form-group col-md-4">
+                            {{ input_Form(form.ventasd, class="form-control", placeholder="Tamaño") }}
+                        </div>
+                    </div>
+                    <button type="button" name="accion" value="consultar_bd" onclick="cambiarAccion('consultar_bd')" class="btn btn-success">Consultar BD Hoy</button>
+                    <h1>El total del Día es: {{ total_ventas_hoy }}</h1>
+                    <div class="row">
+                        <div class="form-group col-md-4">
+                            {{ input_Form(form.ventasm, class="form-control", placeholder="Tamaño") }}
+                        </div>
+                    </div>
+                    <button type="button" name="accion" value="consultar_bd_mes" onclick="cambiarAccion('consultar_bd_mes')" class="btn btn-secondary">Consultar mes</button>
+                    <h1>El total del Mes es: {{ total_ventas_mes }}</h1>
+                </div>
+            </div>
+            <div id="myModal" style="display: none; border: 1px solid black; padding: 20px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; z-index: 1;">
+                <span onclick="closeModal('myModal')" style="position: absolute; top: 5px; right: 10px; cursor: pointer;">Cerrar</span>
+                <p>Estás seguro de realizar la compra</p>
+                <p>{{ totalito }}</p>
+                <input type="submit" id="registrar" name="registrar" value="Registrar" class="btn btn-primary" />
+                <input type="button" onclick="closeModal('myModal')" class="btn btn-info" value="Cancelar compra" />
+            </div>
+        
+        
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Tu formulario actual -->
+                        <form name="registro" id="registro" method="POST" onsubmit="return submitForm()" class="form-row">
+                            <!-- Contenido del formulario aquí -->
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <!-- Datos de pizzass_bd en formato de cuadrícula -->
+                        <div class="card">
+                            <div class="card-header">
+                                <center><h2>Datos de las ventas GENERALES, POR DIA, POR MES</h2></center>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% for pizza_bd in pizzass_bd %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h3 class="card-title">Cliente: {{ pizza_bd.nombre }}</h3>
+                                                <p class="card-text">Total $: {{ pizza_bd.total }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            
+        </table>
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Tamaño</th>
+                    <th>Ingredientes</th>
+                    <th>Número</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <center><h2>Datos de pre Compra</h2></center>
+            <tbody>
+                {% if datos_archivo %}
+                {% for dato in datos_archivo %}
+                <tr>
+                    <td>{{ dato['tamaño'] }}</td>
+                    <td>
+                        {% if dato['ingredientes'] %}
+                        <ul>
+                            {% for ingrediente in dato['ingredientes'].split(',') %}
+                            <li>{{ ingrediente }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        Ningún ingrediente seleccionado
+                        {% endif %}
+                    </td>
+                    <td>{{ dato['numero'] }}</td>
+                    <td>{{ dato['subtotal'] }}</td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+        <button type="button" onclick="cambiarAccion('eliminar_ultima_archivo')" class="btn btn-danger">Eliminar última pizza en archivo</button>
+    </form>
+        <script>
+            function cambiarAccion(accion) {
+                document.getElementById('accion').value = accion;
+                document.getElementById('registro').submit();
+            }
+
+            function openModal() {
+                document.getElementById("myModal").style.display = "block";
+            }
+
+            function closeModal() {
+                document.getElementById("myModal").style.display = "none";
+            }
+
+            function submitForm() {
+                // Aquí puedes agregar lógica adicional antes de enviar el formulario, si es necesario
+                return true;
+            }
+        </script>
+    </div>
+</div>
+{% endblock %}

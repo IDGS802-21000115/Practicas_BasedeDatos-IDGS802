@@ -1,6 +1,9 @@
+from cgitb import text
+import datetime
+import os
 from flask import Flask, render_template,request,Response
 import forms
-
+from sqlalchemy import cast, Date
 from flask_wtf.csrf import CSRFProtect
 from flask import g
 from flask import flash
@@ -9,6 +12,13 @@ from models import Pizzas, db
 from models import Alumnos
 from models import Maestros
 from pizzas import Guardar
+from datetime import datetime
+from datetime import date
+from sqlalchemy import extract, func
+
+
+from datetime import date
+
 
 app = Flask(__name__)
 app.config.from_object(DevelopmentConfig)
@@ -83,24 +93,35 @@ def alumnos():
 
 @app.route("/pizzas", methods=["GET", "POST"])
 def pizzas():
+    total_ventas_mes=0
+    total_ventas_hoy=0
+    pizzass_bdd=[]
     pizzas_form =forms.UserForm4(request.form)
-    datos_archivo = Guardar.leer_datos_archivo()  
-    pizzass_bd = Pizzas.query.all() 
+    datos_archivo = []
+    pizzass_bd =[]
+    
     try:
         if request.method == "POST" and pizzas_form.validate():
             tamaño = str(pizzas_form.tamaño.data)
-            jamon = str(pizzas_form.jamon.data)
-            piña = str(pizzas_form.piña.data)
-            champinones = str(pizzas_form.champiñones.data)
             numero = pizzas_form.numero.data
+            ingredientes = {}
+            if pizzas_form.jamon.data:
+                ingredientes["jamon"] = True
+            if pizzas_form.piña.data:
+                ingredientes["piña"] = True
+            if pizzas_form.champiñones.data:
+                ingredientes["champiñones"] = True
+            
             
             print (pizzas_form.jamon.data)
             print (pizzas_form.piña.data)
             if request.form.get("accion") == "insertar_bd":
+            
                 pizzas = Pizzas(
                     nombre=pizzas_form.nombre.data,
                     direccion=pizzas_form.direccion.data,
                     telefono=pizzas_form.telefono.data,
+                    fecha=pizzas_form.fecha.data,
                     total=Guardar.sumar_subtotales()
                 )
             
@@ -108,21 +129,103 @@ def pizzas():
                 db.session.commit()
                 
                 flash("¡Muy bien insertado en la base de datos!")
-                pizzass_bd = Pizzas.query.all() 
+                os.remove("pizzas.txt")
+
             elif request.form.get("accion") == "insertar_archivo":
                 r = Guardar()
-                result, nuevo_dato = r.unapizza(tamaño, {"jamon": jamon, "piña": piña, "champinones": champinones}, numero)
+                
+                print(ingredientes)
+                result = r.unapizza(tamaño, ingredientes, numero)
 
-                if nuevo_dato:
+                if result:
                     flash("¡Muy bien insertado en el archivo de texto!")
-                    datos_archivo.append(nuevo_dato) 
+                    datos_archivo.append(result) 
+                    datos_archivo = Guardar.leer_datos_archivo()
+                    print(datos_archivo)
                 else:
                     flash(f"Error al insertar en el archivo de texto: {result}")
+                    
+            elif request.form.get("accion") == "eliminar_ultima_archivo":
+                r = Guardar()
+                result = r.eliminar_ultima_pizza()
+                flash(result)
+                datos_archivo = Guardar.leer_datos_archivo()
+                print(datos_archivo)
+            
+            elif request.form.get("accion") == "consultar_bd":
+                dia_actual = pizzas_form.ventasd.data.lower()  
+    
+                print(dia_actual)
+    
+                dias_ingles = {
+                'lunes': 2,  
+                'martes': 3,
+                'miércoles': 4,
+                'jueves': 5,
+                'viernes': 6,
+                'sábado': 7,
+                'domingo': 1  
+                }
 
+                dia_ingles = dias_ingles.get(dia_actual)
+                
+
+                if dia_ingles:
+                    pizzass_bd = Pizzas.query.filter(func.DAYOFWEEK(Pizzas.fecha) ==  dia_ingles).all()
+                    print(pizzass_bd)
+                    total_ventas_hoy = sum(pizza.total for pizza in pizzass_bd)
+                    print(total_ventas_hoy)
+                    for pizza in pizzass_bd:
+                        print(f"Pizza ID: {pizza.id}, Nombre: {pizza.nombre}, Total: {pizza.total}, Fecha de Creación: {pizza.create_date}")
+                else:
+                    print("Día no válido")
+                    pizzass_bd = []
+                
+
+            elif request.form.get("accion") == "consultar_bd_mes":
+              mes_actual = pizzas_form.ventasm.data.lower()  
+    
+              print(mes_actual)
+              
+              meses_ingles = {
+                'enero': '01',
+                'febrero': '02',
+                'marzo': '03',
+                'abril': '04',
+                'mayo': '05',
+                'junio': '06',
+                'julio': '07',
+                'agosto': '08',
+                'septiembre': '09',
+                'octubre': '10',
+                'noviembre': '11',
+                'diciembre':  '12'
+               }
+        
+    
+              mes_ingles = meses_ingles.get(mes_actual)
+              
+              if mes_ingles:
+
+        
+                pizzass_bd = Pizzas.query.filter(func.extract('month', Pizzas.fecha) == int(mes_ingles)).all()
+                
+                print(pizzass_bd)
+                total_ventas_mes = sum(pizza.total for pizza in pizzass_bd)
+                print(total_ventas_mes)
+                for pizza in pizzass_bd:
+                 print(f"Pizza ID: {pizza.id}, Nombre: {pizza.nombre}, Total: {pizza.total}, Fecha de Creación: {pizza.create_date}")
+                 
+              else:
+                print("Mes no válido")
+                total_ventas_mes = 0
+           
+           
+        
     except Exception as e:
-        flash(f"Error general: {e}")
-
-    return render_template("pizzas.html", form=pizzas_form, datos_archivo=datos_archivo, pizzass_bd=pizzass_bd)
+        print(f"Error general: {e}")
+    totalito=Guardar.sumar_subtotales()
+    return render_template("pizzas.html", form=pizzas_form, datos_archivo=datos_archivo, pizzass_bd=pizzass_bd, total_ventas_hoy=total_ventas_hoy, pizzass_bdd=pizzass_bdd, totalito=totalito, total_ventas_mes=total_ventas_mes)
 
 if __name__ == "__main__":
     csrf.init_app(app)

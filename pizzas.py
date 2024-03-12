@@ -3,7 +3,7 @@ class Guardar:
     
     def unapizza(tamaño, ingredientes, numero):
          try:
-            # Verificar el tamaño y asignar el costo correspondiente
+        
             if tamaño == 'chica':
                 costo_tamaño = 40
             elif tamaño == 'mediana':
@@ -15,7 +15,7 @@ class Guardar:
 
             subtotal = costo_tamaño * numero
 
-            # Añadir costos de ingredientes si están seleccionados
+         
             if ingredientes.get('jamon', False):
                 subtotal += 10*numero
             if ingredientes.get('piña', False):
@@ -29,7 +29,9 @@ class Guardar:
             with open('pizzas.txt', 'a') as archivo_texto:
                 cadena_ingredientes = ', '.join(ingredientes_seleccionados)
                 archivo_texto.write(f'\n{tamaño}-{cadena_ingredientes }-{numero}-{subtotal}')
-            datos_archivo = Guardar.leer_datos_archivo()
+                with open('pizzas.txt', 'r') as archivo_texto:
+                  lineas = archivo_texto.readlines()
+                  datos_archivo = Guardar.leer_datos_archivo()
             return "¡Muy bien insertado correctamente!"
          except Exception as e:
             return f"Error al insertar la palabra: {e}"
@@ -65,15 +67,57 @@ class Guardar:
             return total_subtotales
         except Exception as e:
             return f"Error al sumar los subtotales: {e}"
+    @staticmethod  
+    def eliminar_ultima_pizza():
+        try:
+            with open('pizzas.txt', 'r') as archivo_texto:
+                lineas = archivo_texto.readlines()
+
+            if lineas:
+                lineas.pop()  
+
+            with open('pizzas.txt', 'w') as archivo_texto:
+                archivo_texto.writelines(lineas)
+
+            return "Eliminada correctamente la última pizza"
+        except Exception as e:
+            return f"Error al eliminar la última pizza: {e}"
+        
+    @staticmethod
+    def modificar_pizza(indice, nuevo_dato, campo_a_modificar):
+     try:
+        with open('pizzas.txt', 'r') as archivo_texto:
+            lineas = archivo_texto.readlines()
+
+        if indice < 0 or indice >= len(lineas):
+            return "Índice de pizza fuera de rango"
+
+        pizza_actual = lineas[indice].split('-')
+        if campo_a_modificar == 'tamaño':
+            pizza_actual[0] = nuevo_dato
+        elif campo_a_modificar == 'ingredientes':
+            pizza_actual[1] = nuevo_dato
+        elif campo_a_modificar == 'numero':
+            pizza_actual[2] = nuevo_dato
+        elif campo_a_modificar == 'precio':
+            pizza_actual[3] = nuevo_dato
+        else:
+            return "Campo a modificar no válido"
+
+        lineas[indice] = '-'.join(pizza_actual)
+
+        with open('pizzas.txt', 'w') as archivo_texto:
+            archivo_texto.writelines(lineas)
+
+        return f"Modificado correctamente el campo {campo_a_modificar} para la pizza"
+     except Exception as e:
+        return f"Error al modificar la pizza: {e}"
+
 
 if __name__ == "__main__":
-    # Insertar una pizza
-    tamaño_pizza = 'mediana'
-    ingredientes_pizza = {'jamon': True, 'piña': True, 'champiñones': False}
-    numero_pizza = 2
+    indice_a_modificar = 2
+    nuevo_dato_pizza = "Nuevos ingredientes modificados"
+    campo_a_modificar = 'numero'
 
-
-    resultado = Guardar.unapizza(tamaño_pizza, ingredientes_pizza, numero_pizza)
+    resultado = Guardar.modificar_pizza(indice_a_modificar, nuevo_dato_pizza, campo_a_modificar)
     print(resultado)
-
-    

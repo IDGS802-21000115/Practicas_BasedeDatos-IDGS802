@@ -31,7 +31,7 @@ class UserForm3(Form):
 
 class UserForm4(Form):
     id =IntegerField("id")
-    nombre = StringField("nombre",[validators.DataRequired(message='el campo es requerido'), validators.Length(min=4,max=10,message='ingresa nombre valido')])
+    nombre = StringField("nombre",[validators.DataRequired(message='el campo es requerido'), validators.Length(min=1,max=10,message='ingresa nombre valido')])
     telefono = StringField("telefono")
     total =IntegerField("total")
     direccion=StringField('direccion')
@@ -41,3 +41,6 @@ class UserForm4(Form):
     champiñones = BooleanField("Champiñon")
     
     numero =IntegerField("numero")
+    ventasm=StringField("ventasm")
+    ventasd=StringField("ventasd")
+    fecha=StringField("fecha")
